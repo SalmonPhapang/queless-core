@@ -1,0 +1,23 @@
+name: queless_core
+description: Shared statuses, models, and edge-function helpers for the Queless ecosystem (customer, driver, store apps).
+version: 0.2.0
+publish_to: "none"
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # All three apps resolve functions_client 2.5.0 (even though they pin
+  # different supabase_flutter majors), so queless_core can own the
+  # FunctionException normalization directly.
+  functions_client: ^2.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
