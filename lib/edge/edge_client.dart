@@ -82,8 +82,7 @@ class EdgeFunctionException implements Exception {
   const EdgeFunctionException(this.message, {this.status, this.data});
 
   @override
-  String toString() =>
-      'EdgeFunctionException(${status ?? "?"}): $message';
+  String toString() => 'EdgeFunctionException(${status ?? "?"}): $message';
 }
 
 class EdgeClient {
@@ -161,8 +160,7 @@ class EdgeClient {
     Map<String, dynamic> body = const {},
     Map<String, String>? headers,
   }) async {
-    final watch =
-        EdgeClient.logger == null ? null : (Stopwatch()..start());
+    final watch = EdgeClient.logger == null ? null : (Stopwatch()..start());
     try {
       final data = await _invoker(functionName, body, headers: headers);
       // Edge functions conventionally return {error: ...} on failure; a

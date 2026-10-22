@@ -44,3 +44,6 @@ app.*.map.json
 
 # Freebuff desktop workspace data
 .freebuff/
+
+# Local secrets — never commit
+scripts/.supabase_service_key

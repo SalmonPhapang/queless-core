@@ -318,10 +318,8 @@ enum OrderStatus {
       {OrderStatus fallback = OrderStatus.pending}) {
     if (value == null || value.isEmpty) return fallback;
     // Normalize: lowercase and strip separators so both formats match.
-    final normalized = value
-        .trim()
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9]'), '');
+    final normalized =
+        value.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
     for (final status in OrderStatus.values) {
       if (status.name.toLowerCase() == normalized) return status;
       if (status.databaseValue.replaceAll(RegExp(r'[^a-z0-9]'), '') ==
@@ -500,7 +498,8 @@ enum PaymentStatus {
   }
 
   bool get isPaid =>
-      this == PaymentStatus.completed || this == PaymentStatus.partiallyRefunded;
+      this == PaymentStatus.completed ||
+      this == PaymentStatus.partiallyRefunded;
 
   static PaymentStatus fromDatabaseValue(String? value,
       {PaymentStatus fallback = PaymentStatus.pending}) {
@@ -880,8 +879,7 @@ enum RefundStatus {
   }
 
   bool get isTerminal {
-    return const {RefundStatus.rejected, RefundStatus.completed}
-        .contains(this);
+    return const {RefundStatus.rejected, RefundStatus.completed}.contains(this);
   }
 
   Set<RefundStatus> get allowedNextStatuses {
@@ -1071,7 +1069,8 @@ enum OrderAcceptanceStatus {
     if (value == null || value.isEmpty) return fallback;
     final normalized = value.trim().toLowerCase().replaceAll('-', '_');
     return OrderAcceptanceStatus.values.firstWhere(
-      (e) => e.name.toLowerCase() == normalized || e.databaseValue == normalized,
+      (e) =>
+          e.name.toLowerCase() == normalized || e.databaseValue == normalized,
       orElse: () {
         switch (normalized) {
           case 'auto':

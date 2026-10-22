@@ -13,6 +13,18 @@ dependencies:
   # different supabase_flutter majors), so queless_core can own the
   # FunctionException normalization directly.
   functions_client: ^2.5.0
+  # Push registration (lib/push) owns the Firebase Messaging calls for all
+  # three apps, so it needs the SDK. The ranges span every app's resolution:
+  # the Customer app is on firebase_messaging 16 / firebase_core 4, the Driver
+  # and Store apps on 15 / 3. Only the API surface present in both is used.
+  #
+  # Huawei Push Kit has been removed from the Customer app: the app now
+  # targets FCM-only devices, so push registration is a single Firebase path.
+  firebase_core: '>=3.4.0 <5.0.0'
+  firebase_messaging: '>=15.0.0 <17.0.0'
+  # Device-local push state: the last token seen and the topics this device is
+  # believed to be subscribed to (all three apps resolve 2.5.x).
+  shared_preferences: ^2.5.0
 
 dev_dependencies:
   flutter_test:
