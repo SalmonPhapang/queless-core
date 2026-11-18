@@ -14,6 +14,7 @@ export 'device/device_binding.dart';
 export 'push/push_log.dart';
 export 'push/push_messaging.dart';
 export 'push/firebase_push_messaging.dart';
+export 'push/huawei_push_messaging.dart';
 export 'push/push_token_store.dart';
 export 'push/push_state_cache.dart';
 export 'push/push_topics.dart';

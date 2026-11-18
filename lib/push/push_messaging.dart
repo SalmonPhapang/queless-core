@@ -17,13 +17,18 @@
 /// has no provider column, so the provider is device-local bookkeeping used
 /// for diagnostics).
 enum PushProvider {
-  fcm('fcm');
+  fcm('fcm'),
+  hms('hms');
 
   const PushProvider(this.label);
 
   final String label;
 
-  static PushProvider fromLabel(String? label) => PushProvider.fcm;
+  static PushProvider fromLabel(String? label) {
+    final value = (label ?? '').toLowerCase().trim();
+    if (value == 'hms') return PushProvider.hms;
+    return PushProvider.fcm;
+  }
 }
 
 /// The OS-level answer to "may this app post notifications?".

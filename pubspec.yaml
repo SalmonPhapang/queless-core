@@ -20,6 +20,8 @@ dependencies:
   #
   # Huawei Push Kit has been removed from the Customer app: the app now
   # targets FCM-only devices, so push registration is a single Firebase path.
+  # HMS push is available as a second adapter in lib/push/huawei_push_messaging.dart;
+  # the app layer supplies the HMS SDK surface via HuaweiPushMessaging.configureSdk().
   firebase_core: '>=3.4.0 <5.0.0'
   firebase_messaging: '>=15.0.0 <17.0.0'
   # Device-local push state: the last token seen and the topics this device is
