@@ -302,8 +302,8 @@ BEGIN
         DECLARE
           v_recipe_srv integer;
         BEGIN
-          SELECT COALESCE(servings, 2) INTO v_recipe_srv
-            FROM public.recipes WHERE id = p_recipe_id;
+          SELECT COALESCE(r.servings, 2) INTO v_recipe_srv
+            FROM public.recipes AS r WHERE r.id = p_recipe_id;
           IF v_recipe_srv <> p_servings THEN
             v_warning := format(
               'This recipe serves %s; your request was for %s. The basket below is for the full recipe — scale quantities at checkout.',
