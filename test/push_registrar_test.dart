@@ -451,10 +451,42 @@ void main() {
       expect(upserts.keys, {SupabasePushTokenStore.table});
       expect(upserts[SupabasePushTokenStore.table]!['user_id'], 'user-1');
       expect(upserts[SupabasePushTokenStore.table]!['token'], 'tok');
+      expect(upserts[SupabasePushTokenStore.table]!['app_id'], 'store');
       expect(
         updates[SupabasePushTokenStore.legacyTable],
         containsPair('fcm_token', 'tok'),
       );
+    });
+
+    test('uses the configured app id for audience isolation', () async {
+      final upserts = <String, Map<String, dynamic>>{};
+      final store = SupabasePushTokenStore(
+        appId: 'driver',
+        upsert: (table, row) async => upserts[table] = row,
+      );
+
+      await store.saveDeviceToken(userId: 'user-2', token: 'driver-token');
+
+      expect(upserts[SupabasePushTokenStore.table]!['app_id'], 'driver');
+      expect(upserts[SupabasePushTokenStore.table]!['provider'], 'fcm');
+    });
+
+    test('deletes only the exact token and app audience row', () async {
+      final deletes = <String, Map<String, dynamic>>{};
+      final store = SupabasePushTokenStore(
+        appId: 'merchant',
+        upsert: (table, row) async {},
+        delete: (table, match) async => deletes[table] = match,
+      );
+
+      await store.deleteDeviceToken(userId: 'user-3', token: 'old-token');
+
+      expect(deletes[SupabasePushTokenStore.table], {
+        'user_id': 'user-3',
+        'token': 'old-token',
+        'provider': 'fcm',
+        'app_id': 'merchant',
+      });
     });
 
     test('does not mirror the legacy column by default', () async {
@@ -525,6 +557,14 @@ void main() {
 class _FailingStore implements PushTokenStore {
   @override
   Future<void> saveDeviceToken({
+    required String userId,
+    required String token,
+  }) async {
+    throw StateError('RLS: not authenticated');
+  }
+
+  @override
+  Future<void> deleteDeviceToken({
     required String userId,
     required String token,
   }) async {

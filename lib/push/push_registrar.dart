@@ -416,6 +416,29 @@ class PushRegistrar {
     await unsubscribeFromTopics(known);
   }
 
+  /// Removes this device's token row and topic subscriptions on sign-out.
+  ///
+  /// The delete is scoped to the exact cached token and app audience, so other
+  /// devices and other Queless apps stay registered. Failures are logged but
+  /// never prevent the local session teardown.
+  Future<void> clearRegistration() async {
+    final userId = _registeredUserId ?? _sessionUserId?.call();
+    final cached = await _cache.readToken();
+    if (userId != null && userId.trim().isNotEmpty && cached != null) {
+      try {
+        await _store.deleteDeviceToken(
+          userId: userId.trim(),
+          token: cached.token,
+        );
+        PushLog.debug('removed push token for $userId on sign-out');
+      } catch (e) {
+        PushLog.debug('removing the push token on sign-out failed: $e');
+      }
+    }
+    await unsubscribeAll();
+    reset();
+  }
+
   /// Forgets the session's registration guard (sign-out). The next [register]
   /// does the full flow again.
   void reset() {

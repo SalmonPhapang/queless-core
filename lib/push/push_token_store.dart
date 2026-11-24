@@ -30,11 +30,24 @@ typedef PushRowUpdate = Future<void> Function(
   Map<String, dynamic> match,
 );
 
-/// Persists this device's push token for the signed-in user.
+/// `Future<void> delete(table, match)` — e.g.
+/// `(table, match) => SupabaseConfig.client.from(table).delete().match(match)`.
+typedef PushRowDelete = Future<void> Function(
+  String table,
+  Map<String, dynamic> match,
+);
+
+/// Persists and removes this device's push token for the signed-in user.
 abstract class PushTokenStore {
   /// [userId] must be the authenticated user's id (the table's RLS policy is
   /// `user_id = auth.uid()`), never a client-supplied value from elsewhere.
   Future<void> saveDeviceToken({required String userId, required String token});
+
+  /// Removes exactly one saved token. Sign-out must not delete other devices.
+  Future<void> deleteDeviceToken({
+    required String userId,
+    required String token,
+  });
 }
 
 /// The Supabase-backed store every app uses.
@@ -42,9 +55,15 @@ class SupabasePushTokenStore implements PushTokenStore {
   SupabasePushTokenStore({
     required PushRowUpsert upsert,
     PushRowUpdate? update,
+    PushRowDelete? delete,
+    this.appId = defaultAppId,
     this.mirrorLegacyUserColumn = false,
   })  : _upsert = upsert,
-        _update = update;
+        _update = update,
+        _delete = delete;
+
+  /// The Flutter Store app is the default audience for this core store.
+  static const String defaultAppId = 'store';
 
   /// Table holding one row per (user_id, token).
   static const String table = 'user_fcm_tokens';
@@ -53,8 +72,12 @@ class SupabasePushTokenStore implements PushTokenStore {
   static const String legacyTable = 'users';
   static const String legacyColumn = 'fcm_token';
 
+  /// Audience written to `app_id`, so senders never mix app installations.
+  final String appId;
+
   final PushRowUpsert _upsert;
   final PushRowUpdate? _update;
+  final PushRowDelete? _delete;
 
   /// Also mirrors the token into `users.fcm_token`.
   ///
@@ -73,6 +96,8 @@ class SupabasePushTokenStore implements PushTokenStore {
     await _upsert(table, {
       'user_id': userId,
       'token': token,
+      'provider': 'fcm',
+      'app_id': appId,
       'updated_at': now,
     });
 
@@ -88,6 +113,38 @@ class SupabasePushTokenStore implements PushTokenStore {
     } catch (e) {
       // Best-effort: the row that actually delivers pushes is already written.
       PushLog.debug('mirroring $legacyTable.$legacyColumn failed: $e');
+    }
+  }
+
+  @override
+  Future<void> deleteDeviceToken({
+    required String userId,
+    required String token,
+  }) async {
+    final delete = _delete;
+    if (delete == null) return;
+    try {
+      await delete(table, {
+        'user_id': userId,
+        'token': token,
+        'provider': 'fcm',
+        'app_id': appId,
+      });
+    } catch (e) {
+      PushLog.debug('deleting the push token row failed: $e');
+    }
+
+    final update = _update;
+    if (!mirrorLegacyUserColumn || update == null) return;
+    try {
+      await update(legacyTable, {
+        legacyColumn: null,
+      }, {
+        'id': userId,
+        legacyColumn: token,
+      });
+    } catch (e) {
+      PushLog.debug('clearing $legacyTable.$legacyColumn failed: $e');
     }
   }
 }
@@ -107,6 +164,7 @@ class SavedPushToken {
 /// no-op without changing the caller.
 class InMemoryPushTokenStore implements PushTokenStore {
   final List<SavedPushToken> saved = <SavedPushToken>[];
+  final List<SavedPushToken> removed = <SavedPushToken>[];
 
   bool get isEmpty => saved.isEmpty;
 
@@ -124,5 +182,16 @@ class InMemoryPushTokenStore implements PushTokenStore {
     required String token,
   }) async {
     saved.add(SavedPushToken(userId: userId, token: token));
+  }
+
+  @override
+  Future<void> deleteDeviceToken({
+    required String userId,
+    required String token,
+  }) async {
+    saved.removeWhere(
+      (row) => row.userId == userId && row.token == token,
+    );
+    removed.add(SavedPushToken(userId: userId, token: token));
   }
 }
